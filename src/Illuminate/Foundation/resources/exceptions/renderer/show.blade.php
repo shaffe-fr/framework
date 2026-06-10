@@ -11,6 +11,10 @@
 
     <x-laravel-exceptions-renderer::separator class="-mt-5 -z-10" />
 
+    @if (! empty($solutions))
+        @include('laravel-exceptions-renderer::solutions', ['solutions' => $solutions])
+    @endif
+
     <x-laravel-exceptions-renderer::section-container class="flex flex-col gap-8 pt-14">
         <x-laravel-exceptions-renderer::trace :$exception />
 
