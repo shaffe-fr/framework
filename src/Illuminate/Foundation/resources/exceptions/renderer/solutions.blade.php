@@ -1,3 +1,5 @@
+@use('Illuminate\Foundation\Exceptions\Renderer\Solutions\Contracts\RunnableSolution')
+
 @if (! empty($solutions))
     <section class="w-full max-w-7xl mx-auto p-4 sm:p-14 border-x border-dashed border-neutral-300 dark:border-white/[9%] flex flex-col gap-2.5 pt-8">
         <div class="bg-neutral-50 dark:bg-white/1 border border-neutral-200 dark:border-neutral-800 rounded-xl p-2.5 shadow-xs flex flex-col gap-2.5">
@@ -12,15 +14,107 @@
 
             <div class="flex flex-col gap-1.5">
                 @foreach ($solutions as $solution)
-                    <div class="rounded-lg bg-white dark:bg-white/3 border border-neutral-200 dark:border-white/10 shadow-xs overflow-hidden">
-                        <div class="p-4">
-                            <p class="text-sm font-medium text-neutral-900 dark:text-white">
-                                {{ $solution->title() }}
-                            </p>
-                            @if ($solution->description())
-                                <p class="mt-1 text-sm text-neutral-600 dark:text-neutral-400 whitespace-pre-line">{!! preg_replace('/`([^`]+)`/', '<code class="px-1.5 py-0.5 rounded bg-neutral-100 dark:bg-white/10 text-xs font-mono text-neutral-800 dark:text-neutral-200">$1</code>', e($solution->description())) !!}</p>
+                    <div
+                        @if ($solution instanceof RunnableSolution)
+                            x-data="{
+                                state: 'idle',
+                                output: '',
+                                command: {{ Js::from($solution->command()) }},
+                                arguments: {{ Js::from($solution->commandArguments()) }},
+                                endpoint: {{ Js::from(url('/_error-solutions/run')) }},
+                                async run() {
+                                    if (this.state === 'done') {
+                                        window.location.reload();
+                                        return;
+                                    }
+
+                                    this.state = 'running';
+                                    this.output = '';
+
+                                    const csrfToken = document.querySelector('meta[name=csrf-token]')?.getAttribute('content') ?? '';
+
+                                    try {
+                                        const response = await fetch(this.endpoint, {
+                                            method: 'POST',
+                                            headers: {
+                                                'Content-Type': 'application/json',
+                                                'Accept': 'application/json',
+                                                'X-CSRF-TOKEN': csrfToken,
+                                            },
+                                            body: JSON.stringify({ command: this.command, arguments: this.arguments }),
+                                        });
+
+                                        const data = await response.json();
+
+                                        this.output = data.output || '(no output)';
+                                        this.state = data.success ? 'done' : 'failed';
+                                    } catch (e) {
+                                        this.output = e.message;
+                                        this.state = 'failed';
+                                    }
+                                },
+                            }"
+                        @endif
+                        class="rounded-lg bg-white dark:bg-white/3 border border-neutral-200 dark:border-white/10 shadow-xs overflow-hidden"
+                    >
+                        <div class="flex items-center justify-between gap-4 p-4">
+                            <div class="flex-1 min-w-0">
+                                <p class="text-sm font-medium text-neutral-900 dark:text-white">
+                                    {{ $solution->title() }}
+                                </p>
+                                @if ($solution->description())
+                                    <p class="mt-1 text-sm text-neutral-600 dark:text-neutral-400">{{ $solution->description() }}</p>
+                                @endif
+                            </div>
+
+                            @if ($solution instanceof RunnableSolution)
+                                <button
+                                    type="button"
+                                    @click="run()"
+                                    :disabled="state === 'running'"
+                                    class="shrink-0 text-sm rounded-md border px-3 h-8 flex items-center gap-2 transition-colors duration-200 ease-in-out cursor-pointer shadow-xs text-neutral-600 dark:text-neutral-400 bg-white/5 border-neutral-200 hover:bg-neutral-100 dark:bg-white/5 dark:border-white/10 dark:hover:bg-white/10 disabled:opacity-60 disabled:cursor-not-allowed"
+                                >
+                                    <template x-if="state === 'idle'">
+                                        <span class="flex items-center gap-2">
+                                            <svg class="w-3 h-3 text-emerald-500" fill="none" viewBox="0 0 24 24" stroke-width="2.5" stroke="currentColor">
+                                                <path stroke-linecap="round" stroke-linejoin="round" d="M5.25 5.653c0-.856.917-1.398 1.667-.986l11.54 6.347a1.125 1.125 0 0 1 0 1.972l-11.54 6.347a1.125 1.125 0 0 1-1.667-.986V5.653Z" />
+                                            </svg>
+                                            Run
+                                        </span>
+                                    </template>
+                                    <template x-if="state === 'running'">
+                                        <span class="flex items-center gap-2">
+                                            <svg class="w-3 h-3 animate-spin text-emerald-500" fill="none" viewBox="0 0 24 24" stroke-width="2.5" stroke="currentColor">
+                                                <path stroke-linecap="round" d="M12 2a10 10 0 0 1 10 10" />
+                                            </svg>
+                                            Running&hellip;
+                                        </span>
+                                    </template>
+                                    <template x-if="state === 'done'">
+                                        <span class="flex items-center gap-2">
+                                            <svg class="w-3 h-3 text-emerald-500" fill="none" viewBox="0 0 24 24" stroke-width="2.5" stroke="currentColor">
+                                                <path stroke-linecap="round" stroke-linejoin="round" d="M16.023 9.348h4.992v-.001M2.985 19.644v-4.992m0 0h4.992m-4.992 0 3.181 3.183a8.25 8.25 0 0 0 13.803-3.7M4.031 9.865a8.25 8.25 0 0 1 13.803-3.7l3.181 3.182m0-4.991v4.99" />
+                                            </svg>
+                                            Reload
+                                        </span>
+                                    </template>
+                                    <template x-if="state === 'failed'">
+                                        <span class="flex items-center gap-2">
+                                            <svg class="w-3 h-3 text-rose-500" fill="none" viewBox="0 0 24 24" stroke-width="2.5" stroke="currentColor">
+                                                <path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12" />
+                                            </svg>
+                                            Failed
+                                        </span>
+                                    </template>
+                                </button>
                             @endif
                         </div>
+
+                        @if ($solution instanceof RunnableSolution)
+                            <div x-show="output !== ''" x-cloak class="px-4 pb-4">
+                                <pre class="text-xs font-mono p-3 rounded-md bg-neutral-950 text-neutral-200 overflow-x-auto max-h-48 overflow-y-auto border border-neutral-800" x-text="output"></pre>
+                            </div>
+                        @endif
 
                         @if (! empty($solution->links()))
                             <div class="px-4 pb-4 flex flex-wrap gap-3">

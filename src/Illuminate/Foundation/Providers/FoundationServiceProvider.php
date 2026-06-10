@@ -18,6 +18,7 @@ use Illuminate\Foundation\Console\CliDumper;
 use Illuminate\Foundation\Exceptions\Renderer\Listener;
 use Illuminate\Foundation\Exceptions\Renderer\Mappers\BladeMapper;
 use Illuminate\Foundation\Exceptions\Renderer\Renderer;
+use Illuminate\Foundation\Exceptions\Renderer\Solutions\RunSolutionController;
 use Illuminate\Foundation\Exceptions\Renderer\Solutions\SolutionProviderRepository;
 use Illuminate\Foundation\Http\HtmlDumper;
 use Illuminate\Foundation\MaintenanceModeManager;
@@ -29,6 +30,7 @@ use Illuminate\Log\Events\MessageLogged;
 use Illuminate\Queue\Events\JobAttempted;
 use Illuminate\Support\AggregateServiceProvider;
 use Illuminate\Support\Defer\DeferredCallbackCollection;
+use Illuminate\Support\Facades\Route;
 use Illuminate\Support\Facades\URL;
 use Illuminate\Support\Uri;
 use Illuminate\Testing\LoggedExceptionCollection;
@@ -290,6 +292,9 @@ class FoundationServiceProvider extends AggregateServiceProvider
         });
 
         $this->app->singleton(Listener::class);
+
+        Route::middleware('web')
+            ->post('/_error-solutions/run', RunSolutionController::class);
     }
 
     /**

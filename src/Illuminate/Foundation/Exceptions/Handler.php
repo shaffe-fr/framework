@@ -1154,7 +1154,17 @@ class Handler implements ExceptionHandlerContract
     {
         return [
             \Illuminate\Foundation\Exceptions\Renderer\Solutions\Providers\MissingAppKeySolutionProvider::class,
+            \Illuminate\Foundation\Exceptions\Renderer\Solutions\Providers\MissingColumnSolutionProvider::class,
+            \Illuminate\Foundation\Exceptions\Renderer\Solutions\Providers\TableNotFoundSolutionProvider::class,
+            \Illuminate\Foundation\Exceptions\Renderer\Solutions\Providers\ConnectionRefusedSolutionProvider::class,
+            \Illuminate\Foundation\Exceptions\Renderer\Solutions\Providers\AccessDeniedSolutionProvider::class,
+            \Illuminate\Foundation\Exceptions\Renderer\Solutions\Providers\ViewNotFoundSolutionProvider::class,
             \Illuminate\Foundation\Exceptions\Renderer\Solutions\Providers\ViteManifestNotFoundSolutionProvider::class,
+            \Illuminate\Foundation\Exceptions\Renderer\Solutions\Providers\SQLiteDatabaseNotFoundSolutionProvider::class,
+            \Illuminate\Foundation\Exceptions\Renderer\Solutions\Providers\RelationNotFoundSolutionProvider::class,
+            \Illuminate\Foundation\Exceptions\Renderer\Solutions\Providers\LazyLoadingViolationSolutionProvider::class,
+            \Illuminate\Foundation\Exceptions\Renderer\Solutions\Providers\ClassMorphViolationSolutionProvider::class,
+            \Illuminate\Foundation\Exceptions\Renderer\Solutions\Providers\MassAssignmentSolutionProvider::class,
         ];
     }
 
